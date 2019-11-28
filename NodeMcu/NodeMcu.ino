@@ -14,11 +14,11 @@ const char* apiKey = "Q6MDDGTS2RDX2W1I";
 const char* resource = "/update?api_key=";
 
 //Thing Speak API server
-const char* server = "api.thinkspeak.com";
+const char* server = "api.thingspeak.com";
 
 //Variabel global
-unsigned long trigger = 0;
-unsigned long id=0;  
+String trigger = 0;
+String id=0;  
 
 
 
@@ -32,7 +32,6 @@ void setup() {
   Serial.println("Initializing");
 
   //Inisiasi wifi
-  //  initWifi();
   WiFi.begin(ssid,password);
 
   int timeout = 10 * 4; //10 detik
@@ -51,105 +50,65 @@ void setup() {
 
 void loop() {
   Serial.println(id);
-  //Pembacaan data dari UNO
-  StaticJsonBuffer<1000> jsonBuffer;
-  JsonObject& root = jsonBuffer.parseObject(s);
-  if (root == JsonObject::invalid()) return;
 
   //Get Trigger
-  id = root["id"];
-  Serial.println(id);
+  if(s.available()>0){
+    id=s.readStringUntil('|');
+    if(strcmp(id, trigger)!=0){
+      //Sensor value
+      String sensor0=s.readStringUntil('|');
+      String sensor1=s.readStringUntil('|');
+      String sensor2=s.readStringUntil('|');
+      String sensor3=s.readStringUntil('|');
 
-  //Get Sensor
-  int sensor0 = root["sensor0"];
-  Serial.println(sensor0);
-  int sensor1 = root["sensor1"];
-  int sensor2 = root["sensor2"];
-  int sensor3 = root["sensor3"];
+      //Kelompok value
+      String kelompok0=s.readStringUntil('|');
+      String kelompok1=s.readStringUntil('|');
 
-  //Get Kelompok
-  int kelompok0 = root["kelompok0"];
-  Serial.println(kelompok0);
-  int kelompok1 = root["kelompok1"];
+      //Waktu value
+      String jam=s.readStringUntil('|');
+      String menit=s.readStringUntil('|');
+      String detik=s.readStringUntil('|');
 
-  //Get waktu
-  int jam=root["jam"];
-  int menit=root["menit"];
-  int detik=root["detik"];
+      //Tanggal value
+      String hari=s.readStringUntil('|');
+      String bulan=s.readStringUntil('|');
+      String tahun=s.readStringUntil('|');
 
-  //Menggabungkan Waktu
-  String waktu = "";
-  waktu += String(jam);
-  waktu += ":";
-  waktu += String(menit);
-  waktu += ":";
-  waktu += String(detik); 
-  Serial.println(waktu);
-
-  //Get tanggal
-  int hari=root["hari"];
-  int bulan=root["bulan"];
-  int tahun=root["tahun"];
-
-  //Menggabungkan Tanggal
-  String tanggal = "";
-  tanggal += String(hari);
-  tanggal += ".";
-  tanggal += String(bulan);
-  tanggal += ".";
-  tanggal += String(tahun);
-  Serial.println(tanggal); 
-
-
-
-  if(trigger != id && id != 0){
-    //Fungsi upload
-    WiFiClient client;
-    int retries = 5;
+      //Fungsi upload
+      WiFiClient client;
+      int retries = 5;
   
-    while(!!!client.connect(server, 80) && (retries-- > 0)) {
-      digitalWrite(D0, LOW);
-    }
-    if(!!!client.connected()) {
-      digitalWrite(D0, HIGH);
-    }
+      while(!!!client.connect(server, 80) && (retries-- > 0)) {
+        digitalWrite(D0, LOW);
+      }
+      if(!!!client.connected()) {
+        digitalWrite(D0, HIGH);
+      }
   
-    client.print(String("GET ") + resource + apiKey + "&field1=" + sensor0 + "&field2=" + sensor1 + "&field3=" + sensor2 + "&field4=" + sensor3 + "&field5=" + kelompok0 + "&field6=" + kelompok1 + "&field7=" + tanggal + "&field8=" + waktu +
-                    " HTTP/1.1\r\n" +
-                    "Host: " + server + "\r\n" + 
-                    "Connection: close\r\n\r\n");
-    int timeout = 5 * 10; // 5 seconds             
-    while(!!!client.available() && (timeout-- > 0)){
-      delay(100);
-    }
-    if(!!!client.available()) {
-      Serial.println("Nggak Connect");
-       digitalWrite(D0, LOW);
-    }
+      client.print(String("GET ") + resource + apiKey + "&field1=" + sensor0 + "&field2=" + sensor1 + "&field3=" + sensor2 + "&field4=" + sensor3 + "&field5=" + kelompok0 + "&field6=" + kelompok1 + "&field7=" + tanggal + "&field8=" + waktu +
+                      " HTTP/1.1\r\n" +
+                      "Host: " + server + "\r\n" + 
+                      "Connection: close\r\n\r\n");
+      int timeout = 5 * 10; // 5 seconds             
+      while(!!!client.available() && (timeout-- > 0)){
+        delay(100);
+      }
+      if(!!!client.available()) {
+        Serial.println("Nggak Connect");
+        digitalWrite(D0, LOW);
+      }
   
-    while(client.available()){
-      digitalWrite(D0, HIGH);
-    }
+      while(client.available()){
+        digitalWrite(D0, HIGH);
+      }
   
-    Serial.println("\nclosing connection");
-    client.stop();
+      Serial.println("\nclosing connection");
+      client.stop();
 
-    trigger=id;
+      trigger=id;
+    }
   }
-}
 
-//void initWifi(){
-//  WiFi.begin(ssid,password);
-//
-//  int timeout = 10 * 4; //10 detik
-//
-//  while(WiFi.status() != WL_CONNECTED && (timeout-- > 0)){
-//    Serial.print(".");
-//    delay(250);  
-//  }
-//
-//  if(WiFi.status() != WL_CONNECTED) {
-//     digitalWrite(D0, HIGH);
-//     Serial.print("Not Connected");
-//  }
-//}
+    
+}
