@@ -5,8 +5,8 @@
 SoftwareSerial s(D6,D5);
 
 //Variabel untuk wifi
-const char* ssid = "wifi";
-const char* password = "1234567";
+const char* ssid = "OnePlus";
+const char* password = "Oneplusone";
 
 
 //API KEY Thingspeak
@@ -14,38 +14,62 @@ const char* apiKey = "Q6MDDGTS2RDX2W1I";
 const char* resource = "/update?api_key=";
 
 //Thing Speak API server
-const char* server = "api.thinkspeak.com"
+const char* server = "api.thinkspeak.com";
+
+//Variabel global
+unsigned long trigger = 0;
+unsigned long id=0;  
 
 
 
 void setup() {
-  Serial.begin(115200);
-  s.begin(115200);
+  Serial.begin(9600);
+  s.begin(9600);
 
   pinMode(D0, OUTPUT);
   digitalWrite(D0, LOW);
 
+  Serial.println("Initializing");
+
   //Inisiasi wifi
-  initWifi();
+  //  initWifi();
+  WiFi.begin(ssid,password);
+
+  int timeout = 10 * 4; //10 detik
+
+  while(WiFi.status() != WL_CONNECTED && (timeout-- > 0)){
+    Serial.print(".");
+    delay(250);  
+  }
+
+  if(WiFi.status() != WL_CONNECTED) {
+     digitalWrite(D0, HIGH);
+     Serial.print("Not Connected");
+  }
+  Serial.println("Connected");
 }
 
 void loop() {
+  Serial.println(id);
   //Pembacaan data dari UNO
   StaticJsonBuffer<1000> jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(s);
   if (root == JsonObject::invalid()) return;
 
   //Get Trigger
-  unsigned long id = root["id"];
+  id = root["id"];
+  Serial.println(id);
 
   //Get Sensor
   int sensor0 = root["sensor0"];
+  Serial.println(sensor0);
   int sensor1 = root["sensor1"];
   int sensor2 = root["sensor2"];
   int sensor3 = root["sensor3"];
 
   //Get Kelompok
   int kelompok0 = root["kelompok0"];
+  Serial.println(kelompok0);
   int kelompok1 = root["kelompok1"];
 
   //Get waktu
@@ -60,6 +84,7 @@ void loop() {
   waktu += String(menit);
   waktu += ":";
   waktu += String(detik); 
+  Serial.println(waktu);
 
   //Get tanggal
   int hari=root["hari"];
@@ -72,16 +97,17 @@ void loop() {
   tanggal += ".";
   tanggal += String(bulan);
   tanggal += ".";
-  tanggal += String(tahun); 
+  tanggal += String(tahun);
+  Serial.println(tanggal); 
 
-  unsigned long trigger = 0;
 
-  if(trigger != id){
+
+  if(trigger != id && id != 0){
     //Fungsi upload
     WiFiClient client;
-    int retries 5;
+    int retries = 5;
   
-    while(!!!client.connect(server, 80) && (retries-- > )) {
+    while(!!!client.connect(server, 80) && (retries-- > 0)) {
       digitalWrite(D0, LOW);
     }
     if(!!!client.connected()) {
@@ -93,15 +119,16 @@ void loop() {
                     "Host: " + server + "\r\n" + 
                     "Connection: close\r\n\r\n");
     int timeout = 5 * 10; // 5 seconds             
-    while(!!!client.available() && (timeout-- > )){
+    while(!!!client.available() && (timeout-- > 0)){
       delay(100);
     }
     if(!!!client.available()) {
+      Serial.println("Nggak Connect");
        digitalWrite(D0, LOW);
     }
   
     while(client.available()){
-      digitalWrite(D0, HIGH)
+      digitalWrite(D0, HIGH);
     }
   
     Serial.println("\nclosing connection");
@@ -111,16 +138,18 @@ void loop() {
   }
 }
 
-void initWifi(){
-  WiFi.begin(ssid,password);
-
-  int timeout = 10 * 4; //10 detik
-
-  while(WiFi.status() != WL_CONNECTED && (timeout-- > )){
-    delay(250);  
-  }
-
-  if(WiFi.status() != WL_CONNECTED) {
-     digitalWrite(D0, HIGH);
-  }
-}
+//void initWifi(){
+//  WiFi.begin(ssid,password);
+//
+//  int timeout = 10 * 4; //10 detik
+//
+//  while(WiFi.status() != WL_CONNECTED && (timeout-- > 0)){
+//    Serial.print(".");
+//    delay(250);  
+//  }
+//
+//  if(WiFi.status() != WL_CONNECTED) {
+//     digitalWrite(D0, HIGH);
+//     Serial.print("Not Connected");
+//  }
+//}
