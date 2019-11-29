@@ -17,9 +17,8 @@ const char* resource = "/update?api_key=";
 const char* server = "api.thingspeak.com";
 
 //Variabel global
-String trigger = 0;
-String id=0;  
-
+String trigger = "0";
+String id= "0";
 
 
 void setup() {
@@ -54,26 +53,45 @@ void loop() {
   //Get Trigger
   if(s.available()>0){
     id=s.readStringUntil('|');
-    if(strcmp(id, trigger)!=0){
+    
+    if(id.equals(trigger)!= true && id!= "0|" && id != "0"){
       //Sensor value
       String sensor0=s.readStringUntil('|');
       String sensor1=s.readStringUntil('|');
       String sensor2=s.readStringUntil('|');
       String sensor3=s.readStringUntil('|');
+      Serial.println(sensor0);
+      Serial.println(sensor1);
+      Serial.println(sensor2);
+      Serial.println(sensor3);
 
       //Kelompok value
       String kelompok0=s.readStringUntil('|');
       String kelompok1=s.readStringUntil('|');
+      Serial.println(kelompok0);
+      Serial.println(kelompok1);
 
       //Waktu value
       String jam=s.readStringUntil('|');
       String menit=s.readStringUntil('|');
       String detik=s.readStringUntil('|');
+      String waktu = jam;
+      waktu += ":"; 
+      waktu += menit;
+      waktu += ":"; 
+      waktu += detik;
+      Serial.println(waktu);
 
       //Tanggal value
       String hari=s.readStringUntil('|');
       String bulan=s.readStringUntil('|');
       String tahun=s.readStringUntil('|');
+      String tanggal = hari;
+      tanggal += "/";
+      tanggal += bulan;
+      tanggal += "/";
+      tanggal +=tahun;
+      Serial.println(tanggal);
 
       //Fungsi upload
       WiFiClient client;
@@ -90,6 +108,7 @@ void loop() {
                       " HTTP/1.1\r\n" +
                       "Host: " + server + "\r\n" + 
                       "Connection: close\r\n\r\n");
+      
       int timeout = 5 * 10; // 5 seconds             
       while(!!!client.available() && (timeout-- > 0)){
         delay(100);
@@ -101,12 +120,24 @@ void loop() {
   
       while(client.available()){
         digitalWrite(D0, HIGH);
+        if(trigger.equals(id)!=true){
+          trigger=id;
+          id="";
+          waktu = "";
+          tanggal = "";
+          sensor0="";
+          sensor1="";
+          sensor2="";
+          sensor3="";
+          kelompok0="";
+          kelompok1="";
+        }
+        break;
       }
   
       Serial.println("\nclosing connection");
       client.stop();
 
-      trigger=id;
     }
   }
 
